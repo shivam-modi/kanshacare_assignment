@@ -17,7 +17,9 @@ kill_timeout = "10s"
   force_https = true
   auto_stop_machines = true
   auto_start_machines = true
-  min_machines_running = 0  # Cold-start is fine for the static dashboard.
+  # Keep one machine warm so the interview demo doesn't hit a 5-10s cold-start.
+  # Bump to 0 again post-interview if you want to save the ~$2/mo idle cost.
+  min_machines_running = 1
 
   [[http_service.checks]]
     grace_period = "10s"
