@@ -7,10 +7,14 @@ kill_timeout = "10s"
   dockerfile = "../web/Dockerfile"
   build-target = "runtime"
 
+  # Baked into the JS bundle so the browser calls the deployed api-svc, not
+  # localhost. NOT a secret — Next.js ships NEXT_PUBLIC_* values to every
+  # client that loads the page.
+  [build.args]
+    NEXT_PUBLIC_API_BASE_URL = "https://kanshacare-api.fly.dev"
+
 [env]
   NODE_ENV = "production"
-  # NEXT_PUBLIC_API_BASE_URL is baked at build-time; set via flyctl secrets
-  # AND via [build.args] before deploying, since Next inlines it into the bundle.
 
 [http_service]
   internal_port = 3000
