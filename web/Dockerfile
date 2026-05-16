@@ -10,6 +10,11 @@ FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY web/ ./
+# NEXT_PUBLIC_* env vars are inlined into the JS bundle at build time, not
+# read at runtime. We pass the deployed API URL in via --build-arg so the
+# bundle calls the live api-svc instead of localhost.
+ARG NEXT_PUBLIC_API_BASE_URL
+ENV NEXT_PUBLIC_API_BASE_URL=${NEXT_PUBLIC_API_BASE_URL}
 RUN npm run build
 
 # ---------- runtime ----------
