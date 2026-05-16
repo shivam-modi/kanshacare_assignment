@@ -1,0 +1,70 @@
+[project]
+name = "kanshacare"
+version = "0.1.0"
+description = "Kansha Care — USGS earthquake ingestion, dashboard, and Telegram alerting"
+requires-python = ">=3.12"
+
+[tool.uv.workspace]
+members = ["shared", "services/ingestion", "services/api", "services/alerts", "services/worker"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["web", ".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W",     # pycodestyle, pyflakes
+    "I",                # isort
+    "B",                # bugbear
+    "UP",               # pyupgrade
+    "SIM",              # simplify
+    "RET",              # return
+    "ASYNC",            # async issues
+    "TID",              # tidy imports
+    "PL",               # pylint subset
+    "RUF",              # ruff-specific
+]
+ignore = [
+    "PLR0913",          # too many arguments
+    "PLR2004",          # magic value used in comparison
+    "PLR0911",          # too many return statements — early-return style is clearer for enumerated failure modes
+    "E501",             # line too long (ruff format handles)
+    "TID252",           # relative imports within a package are idiomatic
+    "RUF001",           # ambiguous unicode in strings — math symbols (×, ≥) are deliberate
+    "RUF002",           # ditto for docstrings
+    "RUF012",           # mutable class attributes — arq WorkerSettings convention
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = [
+    "PLR2004", "S101",
+    "PLC0415",      # imports inside tests are intentional
+    "PLR0911", "PLR0912",  # test fakes can be branchy
+    "RUF059",       # unused unpacked vars in tuple destructuring are conventional
+    "I001",         # ruff vs our relative-import preference
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["kanshacare_shared"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_unused_ignores = true
+warn_return_any = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+plugins = ["pydantic.mypy"]
+exclude = ["web", ".venv", "tests/fixtures"]
+
+[[tool.mypy.overrides]]
+module = ["apscheduler.*", "arq.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# importlib mode avoids "test_<x>.py duplicate basename" collisions across services.
+addopts = "-ra --strict-markers --import-mode=importlib"
+testpaths = ["shared/tests", "services/ingestion/tests", "services/api/tests", "services/alerts/tests", "services/worker/tests"]
+filterwarnings = ["error", "ignore::DeprecationWarning"]

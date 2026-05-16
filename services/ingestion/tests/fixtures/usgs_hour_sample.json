@@ -1,0 +1,78 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "generated": 1700000600000,
+    "url": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson",
+    "title": "USGS All Earthquakes, Past Hour",
+    "status": 200,
+    "api": "1.10.3",
+    "count": 3
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "ci-event-001",
+      "properties": {
+        "mag": 1.4,
+        "place": "10 km E of Anytown",
+        "time": 1700000100000,
+        "updated": 1700000200000,
+        "alert": null,
+        "status": "automatic",
+        "tsunami": 0,
+        "sig": 32,
+        "net": "ci",
+        "code": "001",
+        "ids": ",ci001,",
+        "sources": ",ci,",
+        "types": ",origin,",
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-117.1, 33.5, 4.2]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ci-event-002",
+      "properties": {
+        "mag": 5.1,
+        "place": "30 km W of Somewhere",
+        "time": 1700000300000,
+        "updated": 1700000400000,
+        "alert": "yellow",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 412,
+        "magType": "mw",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [142.5, 38.1, 12.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "ci-event-003",
+      "properties": {
+        "mag": 6.7,
+        "place": "Offshore",
+        "time": 1700000500000,
+        "updated": 1700000550000,
+        "alert": "orange",
+        "status": "reviewed",
+        "tsunami": 1,
+        "sig": 690,
+        "magType": "mw",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [165.0, -15.0, 25.0]
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+app = "kanshacare-api"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = "10s"
+
+[build]
+  dockerfile = "services/api/Dockerfile"
+
+[env]
+  ENV = "production"
+  LOG_FORMAT = "json"
+
+# api-svc is stateless — safe to scale horizontally. Default to 1; scale up if
+# the dashboard ever fans out. SSE keeps long-lived connections so concurrency
+# soft-limit matters: a busy api machine carries many idle SSE listeners.
+[http_service]
+  internal_port = 8001
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/healthz"
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 500
+    soft_limit = 200
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

@@ -1,0 +1,122 @@
+name: kanshacare
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: kc-mongo
+    restart: unless-stopped
+    ports: ["27017:27017"]
+    volumes: ["mongo_data:/data/db"]
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand({ping:1}).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: kc-redis
+    restart: unless-stopped
+    ports: ["6379:6379"]
+    volumes: ["redis_data:/data"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  ingestion:
+    build:
+      context: .
+      dockerfile: services/ingestion/Dockerfile
+    container_name: kc-ingestion
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379
+    ports: ["${INGESTION_PORT:-8000}:8000"]
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  api:
+    build:
+      context: .
+      dockerfile: services/api/Dockerfile
+    container_name: kc-api
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379
+    ports: ["${API_PORT:-8001}:8001"]
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  alerts:
+    build:
+      context: .
+      dockerfile: services/alerts/Dockerfile
+    container_name: kc-alerts
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379
+    ports: ["${ALERTS_PORT:-8002}:8002"]
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  worker:
+    # FastAPI healthz/metrics sidecar — same image as worker-arq.
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    container_name: kc-worker
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379
+    ports: ["${WORKER_HEALTH_PORT:-8003}:8003"]
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  worker-arq:
+    # The actual arq consumer that drains the Redis queue and posts to Telegram.
+    build:
+      context: .
+      dockerfile: services/worker/Dockerfile
+    container_name: kc-worker-arq
+    restart: unless-stopped
+    env_file: [.env]
+    environment:
+      MONGO_URI: mongodb://mongo:27017
+      REDIS_URL: redis://redis:6379
+    command: ["arq", "worker_app.worker.WorkerSettings"]
+    depends_on:
+      mongo: {condition: service_healthy}
+      redis: {condition: service_healthy}
+
+  web:
+    image: node:20-alpine
+    container_name: kc-web
+    working_dir: /app
+    command: sh -c "if [ -f package.json ]; then npm ci && npm run dev; else echo 'web/ not scaffolded yet — exiting' && tail -f /dev/null; fi"
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+      - /app/.next
+    env_file: [.env]
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8001
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+volumes:
+  mongo_data:
+  redis_data:

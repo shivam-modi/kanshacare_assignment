@@ -1,0 +1,38 @@
+# fly.toml for kanshacare-ingestion
+# Run from repo root: flyctl deploy -c infra/fly.ingestion.toml
+app = "kanshacare-ingestion"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = "15s"
+
+[build]
+  dockerfile = "services/ingestion/Dockerfile"
+
+[env]
+  ENV = "production"
+  LOG_FORMAT = "json"
+  USGS_POLL_INTERVAL_SECONDS = "60"
+  USGS_BACKFILL_ON_BOOT = "true"
+
+# ingestion-svc is the *only* writer of poll cadence. Must NOT scale > 1 instance
+# or we'd duplicate polls and inflate USGS load. min_machines_running = 1 keeps
+# the poller alive even when there's zero web traffic (Fly's autoscaler defaults
+# to scale-to-zero, which would silence the feed).
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "20s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/healthz"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

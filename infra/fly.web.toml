@@ -1,0 +1,37 @@
+app = "kanshacare-web"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = "10s"
+
+[build]
+  dockerfile = "web/Dockerfile"
+  build-target = "runtime"
+
+[env]
+  NODE_ENV = "production"
+  # NEXT_PUBLIC_API_BASE_URL is baked at build-time; set via flyctl secrets
+  # AND via [build.args] before deploying, since Next inlines it into the bundle.
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0  # Cold-start is fine for the static dashboard.
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/"
+
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 250
+    soft_limit = 100
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256

@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main, kanshacare]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  python:
+    name: Lint / Type / Test (Python)
+    runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports: ["27017:27017"]
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ping:1}).ok' || exit 1"
+          --health-interval 10s --health-timeout 5s --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      MONGO_URI: mongodb://localhost:27017
+      MONGO_DB: kanshacare_test
+      REDIS_URL: redis://localhost:6379
+      ENV: ci
+      LOG_FORMAT: console
+      TELEGRAM_BOT_TOKEN: test-token
+      TELEGRAM_WEBHOOK_SECRET: test-secret
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "latest"
+      - name: Set up Python
+        run: uv python install 3.12
+      - name: Install workspace
+        run: uv sync --all-packages --dev
+      - name: Ruff lint
+        run: uv run ruff check .
+      - name: Ruff format check
+        run: uv run ruff format --check .
+      - name: Mypy
+        run: uv run mypy shared services
+      - name: Pytest
+        run: uv run pytest
+
+  web:
+    name: Lint / Build (Next.js)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: web/package-lock.json
+      - run: |
+          if [ -f package.json ]; then
+            npm ci
+            npm run lint --if-present
+            npm run build --if-present
+          else
+            echo "web/ not scaffolded yet — skipping"
+          fi

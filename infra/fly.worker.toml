@@ -1,0 +1,45 @@
+app = "kanshacare-worker"
+primary_region = "iad"
+kill_signal = "SIGINT"
+kill_timeout = "20s"
+
+[build]
+  dockerfile = "services/worker/Dockerfile"
+
+[env]
+  ENV = "production"
+  LOG_FORMAT = "json"
+
+# Two processes share the image: the FastAPI healthz sidecar exposed publicly
+# (so we can hit /healthz from Fly's checks) and the arq worker. The worker
+# consumes both alert and summary queues — it can scale horizontally on the
+# same Redis stream when load grows.
+[processes]
+  web = "uvicorn worker_app.main:app --host 0.0.0.0 --port 8003"
+  arq = "arq worker_app.worker.WorkerSettings"
+
+[http_service]
+  internal_port = 8003
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 1
+  processes = ["web"]
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    timeout = "5s"
+    path = "/healthz"
+
+# arq workers don't take HTTP — they pull jobs from Redis. Keep at least one alive.
+[[services]]
+  protocol = "tcp"
+  processes = ["arq"]
+  # No internal_port — arq workers are not externally addressable.
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 512

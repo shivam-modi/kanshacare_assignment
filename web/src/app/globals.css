@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'leaflet/dist/leaflet.css';
+
+:root {
+  color-scheme: dark;
+  --bg: #0b1220;
+  --surface: #111a2d;
+  --surface-2: #182238;
+  --border: #1f2c46;
+  --text: #e2e8f0;
+  --muted: #64748b;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+.surface {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+/* Leaflet tile attribution looks ugly on dark — clean it up. */
+.leaflet-container {
+  background: #0a0f1c !important;
+}
+.leaflet-control-attribution {
+  background: rgba(15, 23, 42, 0.7) !important;
+  color: #94a3b8 !important;
+}
+.leaflet-control-attribution a {
+  color: #cbd5e1 !important;
+}
