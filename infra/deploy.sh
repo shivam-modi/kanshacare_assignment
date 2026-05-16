@@ -88,11 +88,14 @@ flyctl secrets set --app "$APP_WEB" --stage \
   NEXT_PUBLIC_API_BASE_URL="$API_URL" >/dev/null
 
 echo "▶ 3/4  Deploying all 5 apps..."
-flyctl deploy -c infra/fly.ingestion.toml --remote-only
-flyctl deploy -c infra/fly.api.toml       --remote-only
-flyctl deploy -c infra/fly.alerts.toml    --remote-only
-flyctl deploy -c infra/fly.worker.toml    --remote-only
-flyctl deploy -c infra/fly.web.toml       --remote-only
+# The `.` argument sets the build context to the repo root so the Dockerfile
+# paths inside the fly.<svc>.toml files (which start with `services/...` and
+# `web/...`) resolve correctly. Without it, Fly uses `infra/` as the context.
+flyctl deploy . -c infra/fly.ingestion.toml --remote-only
+flyctl deploy . -c infra/fly.api.toml       --remote-only
+flyctl deploy . -c infra/fly.alerts.toml    --remote-only
+flyctl deploy . -c infra/fly.worker.toml    --remote-only
+flyctl deploy . -c infra/fly.web.toml       --remote-only
 
 echo "▶ 4/4  Registering Telegram webhook..."
 curl -fsS "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/setWebhook" \
