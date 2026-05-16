@@ -6,7 +6,9 @@ kill_signal = "SIGINT"
 kill_timeout = "15s"
 
 [build]
-  dockerfile = "services/ingestion/Dockerfile"
+  # Path is resolved relative to THIS file's directory (infra/), so prefix
+  # with `..` to point at the Dockerfile under the repo root.
+  dockerfile = "../services/ingestion/Dockerfile"
 
 [env]
   ENV = "production"

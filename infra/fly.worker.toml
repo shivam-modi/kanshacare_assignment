@@ -4,7 +4,7 @@ kill_signal = "SIGINT"
 kill_timeout = "20s"
 
 [build]
-  dockerfile = "services/worker/Dockerfile"
+  dockerfile = "../services/worker/Dockerfile"
 
 [env]
   ENV = "production"
