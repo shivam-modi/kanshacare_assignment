@@ -6,8 +6,9 @@ A continuous-feed ingestion, monitoring, and alerting system built on the USGS e
 
 | | |
 |---|---|
-| Dashboard | `https://kanshacare-web.fly.dev` *(fill in after deploy)* |
-| Telegram bot | `@KanshaCareBot` *(fill in)* — message `/start` to subscribe |
+| Dashboard | <https://kanshacare-web.fly.dev> |
+| Telegram bot | [@Kanshacare_bot](https://t.me/Kanshacare_bot) — send `/start` to subscribe, `/summary` for an on-demand digest |
+| API health | <https://kanshacare-api.fly.dev/system/health> |
 | Architecture doc | [ARCHITECTURE.md](./ARCHITECTURE.md) — 2 pages, evaluation-ready |
 | Deploy guide | [infra/README.md](./infra/README.md) |
 
