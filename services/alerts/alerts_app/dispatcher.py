@@ -15,7 +15,6 @@ from .rules import AlertCandidate
 
 log = get_logger(__name__)
 
-DELIVERY_QUEUE = "kanshacare:alerts"
 DELIVERY_JOB = "send_alert"
 
 
@@ -57,7 +56,6 @@ async def dispatch(
         event_id=candidate.event_id,
         location_id=candidate.location_id,
         payload=candidate.payload,
-        _queue_name=DELIVERY_QUEUE,
     )
     ALERTS_FIRED.labels(candidate.rule, candidate.severity).inc()
     log.info(

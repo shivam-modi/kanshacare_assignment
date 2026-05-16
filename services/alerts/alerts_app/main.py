@@ -58,11 +58,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # Daily summary cron — enqueues the same job that the dashboard button does.
     async def _enqueue_daily_summary() -> None:
         try:
-            await arq_pool.enqueue_job(
-                "summary_job",
-                chat_id=None,  # broadcast
-                _queue_name="kanshacare:summaries",
-            )
+            await arq_pool.enqueue_job("summary_job", chat_id=None)  # broadcast
             log.info("alerts.daily_summary.enqueued")
         except Exception:
             log.exception("alerts.daily_summary.enqueue_failed")

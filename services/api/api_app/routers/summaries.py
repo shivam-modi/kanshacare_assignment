@@ -27,7 +27,6 @@ log = get_logger(__name__)
 
 limiter = Limiter(key_func=get_remote_address)
 
-QUEUE_NAME = "kanshacare:summaries"
 JOB_NAME = "summary_job"
 
 
@@ -48,11 +47,7 @@ async def request_summary(
     settings: SettingsDep,
     body: Annotated[SummaryRequest, Body(default_factory=SummaryRequest)],
 ) -> dict[str, str | None]:
-    job = await arq.enqueue_job(
-        JOB_NAME,
-        chat_id=body.chat_id,
-        _queue_name=QUEUE_NAME,
-    )
+    job = await arq.enqueue_job(JOB_NAME, chat_id=body.chat_id)
     if job is None:
         # arq returns None if the same job is already queued (dedup by ID).
         return {"status": "already_queued", "job_id": None}
@@ -69,7 +64,7 @@ async def job_status(arq: ArqDep, job_id: str) -> dict[str, str | None]:
 
 async def _fetch_job(arq: ArqRedis, job_id: str) -> dict[str, str | None] | None:
     """Look up an arq job's status from Redis. Returns None if it isn't tracked."""
-    job = Job(job_id, arq, _queue_name=QUEUE_NAME)
+    job = Job(job_id, arq)
     try:
         status = await job.status()
     except Exception:

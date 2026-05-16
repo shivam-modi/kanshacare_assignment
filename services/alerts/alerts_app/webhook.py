@@ -105,11 +105,7 @@ async def _dispatch_command(
         return
 
     if cmd == "/summary":
-        await arq.enqueue_job(
-            "summary_job",
-            chat_id=chat_id,
-            _queue_name="kanshacare:summaries",
-        )
+        await arq.enqueue_job("summary_job", chat_id=chat_id)
         await tg.send_message(
             chat_id=chat_id, text="⏳ Generating summary — should arrive in a few seconds."
         )

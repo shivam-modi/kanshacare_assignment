@@ -18,6 +18,7 @@ build/
 htmlcov/
 .tox/
 
+.env.production
 # uv
 .uv-cache/
 
