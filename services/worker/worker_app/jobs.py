@@ -140,16 +140,39 @@ async def _send_one(ctx: dict[str, Any], chat_id: int, text: str, *, kind: str) 
 
     if resp.status_code == 429:
         # Honor Retry-After if Telegram tells us to back off — arq's retry will pick it up.
+        log.warning("worker.send.rate_limited", chat_id=chat_id, kind=kind)
         TELEGRAM_DELIVERY.labels(kind, "rate_limited").inc()
         return False
     if resp.status_code >= 500:
+        log.warning(
+            "worker.send.upstream_5xx",
+            chat_id=chat_id,
+            kind=kind,
+            status=resp.status_code,
+            body=resp.text[:500],
+        )
         TELEGRAM_DELIVERY.labels(kind, "upstream_5xx").inc()
         return False
     if not resp.is_success:
+        log.warning(
+            "worker.send.http_error",
+            chat_id=chat_id,
+            kind=kind,
+            status=resp.status_code,
+            body=resp.text[:500],
+        )
         TELEGRAM_DELIVERY.labels(kind, f"http_{resp.status_code}").inc()
         return False
     body = resp.json()
     if not body.get("ok"):
+        # Surface Telegram's actual error_code + description so failures aren't silent.
+        log.warning(
+            "worker.send.not_ok",
+            chat_id=chat_id,
+            kind=kind,
+            error_code=body.get("error_code"),
+            description=body.get("description"),
+        )
         TELEGRAM_DELIVERY.labels(kind, "not_ok").inc()
         return False
     TELEGRAM_DELIVERY.labels(kind, "ok").inc()

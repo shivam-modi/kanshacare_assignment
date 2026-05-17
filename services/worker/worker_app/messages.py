@@ -2,10 +2,21 @@
 
 from __future__ import annotations
 
+import html
 from datetime import UTC, datetime
 from typing import Any
 
 DASHBOARD_LINK_TEMPLATE = "{base}/"
+
+
+def _esc(value: Any) -> str:
+    """HTML-escape a value for safe interpolation into a parse_mode=HTML message.
+
+    Telegram rejects messages where unescaped <, >, & appear in text content.
+    USGS place names and user-entered location names can contain any of these,
+    so every interpolated string gets run through this.
+    """
+    return html.escape("" if value is None else str(value), quote=False)
 
 
 def alert_message(
@@ -50,11 +61,11 @@ def _rule_label(rule: str) -> str:
 
 def _global_body(p: dict[str, Any]) -> str:
     mag = p.get("mag")
-    place = p.get("place") or "—"
+    place = _esc(p.get("place") or "—")
     ts = _fmt_ms(p.get("time"))
     extras = []
     if p.get("alert"):
-        extras.append(f"PAGER {p['alert']}")
+        extras.append(f"PAGER {_esc(p['alert'])}")
     if p.get("tsunami"):
         extras.append("Tsunami flag")
     tag_str = (" · " + " · ".join(extras)) if extras else ""
@@ -63,8 +74,8 @@ def _global_body(p: dict[str, Any]) -> str:
 
 def _near_body(p: dict[str, Any]) -> str:
     mag = p.get("mag")
-    place = p.get("place") or "—"
-    loc = p.get("location_name") or "your location"
+    place = _esc(p.get("place") or "—")
+    loc = _esc(p.get("location_name") or "your location")
     dist = p.get("distance_km")
     ts = _fmt_ms(p.get("time"))
     return f"<b>M{mag:.1f}</b> — {place}\n{dist:.0f} km from <b>{loc}</b>\n{ts}"
@@ -92,7 +103,7 @@ def _silence_body(p: dict[str, Any]) -> str:
 
 
 def _generic_body(p: dict[str, Any]) -> str:
-    return "\n".join(f"<code>{k}</code>: {v}" for k, v in p.items())
+    return "\n".join(f"<code>{_esc(k)}</code>: {_esc(v)}" for k, v in p.items())
 
 
 def _fmt_ms(ms: int | float | None) -> str:
@@ -118,7 +129,7 @@ def daily_summary(
     dashboard_base_url: str,
 ) -> str:
     lines = [
-        f"📅 <b>Kansha Care — {window_label}</b>",
+        f"📅 <b>Kansha Care — {_esc(window_label)}</b>",
         "",
         f"<b>Total events:</b> {totals.get('total', 0)}",
     ]
@@ -126,17 +137,17 @@ def daily_summary(
     if mag_bands:
         lines.append("\n<b>By magnitude band:</b>")
         for band, n in sorted(mag_bands.items(), reverse=True):
-            lines.append(f"  • {band}: {n}")
+            lines.append(f"  • {_esc(band)}: {n}")
 
     if top_regions:
         lines.append("\n<b>Top regions:</b>")
         for i, (place, n) in enumerate(top_regions[:3], start=1):
-            lines.append(f"  {i}. {place} — {n}")
+            lines.append(f"  {i}. {_esc(place)} — {n}")
 
     if fired_alerts:
         lines.append("\n<b>Alerts fired:</b>")
         for rule, n in fired_alerts.items():
-            lines.append(f"  • {_rule_label(rule)}: {n}")
+            lines.append(f"  • {_esc(_rule_label(rule))}: {n}")
     else:
         lines.append("\nNo alerts fired in this period.")
 
@@ -144,8 +155,9 @@ def daily_summary(
         lines.append("\n<b>Your locations:</b>")
         for loc in locations:
             score = loc.get("risk_score")
-            tier = loc.get("risk_tier") or "—"
-            lines.append(f"  • {loc.get('name')} — risk {score} ({tier})")
+            tier = _esc(loc.get("risk_tier") or "—")
+            name = _esc(loc.get("name"))
+            lines.append(f"  • {name} — risk {score} ({tier})")
 
     lines.append("\n<b>System health:</b>")
     sr = health.get("success_rate_1h")
