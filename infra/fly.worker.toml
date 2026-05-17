@@ -33,11 +33,8 @@ kill_timeout = "20s"
     timeout = "5s"
     path = "/healthz"
 
-# arq workers don't take HTTP — they pull jobs from Redis. Keep at least one alive.
-[[services]]
-  protocol = "tcp"
-  processes = ["arq"]
-  # No internal_port — arq workers are not externally addressable.
+# The arq process group has NO services block — it's a worker, not a server.
+# Fly keeps the machine alive based on the [processes] entry alone.
 
 [[vm]]
   cpu_kind = "shared"
