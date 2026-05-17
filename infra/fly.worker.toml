@@ -34,7 +34,12 @@ kill_timeout = "20s"
     path = "/healthz"
 
 # The arq process group has NO services block — it's a worker, not a server.
-# Fly keeps the machine alive based on the [processes] entry alone.
+# Fly needs an explicit restart policy + machine count for groups without a
+# service binding, otherwise it has nothing to bring the machine back when a
+# deploy or crash stops it.
+[[restart]]
+  policy = "always"
+  processes = ["arq"]
 
 [[vm]]
   cpu_kind = "shared"
